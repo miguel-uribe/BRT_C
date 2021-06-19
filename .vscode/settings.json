@@ -70,5 +70,6 @@
         "thread": "c",
         "typeindex": "c",
         "valarray": "c"
-    }
+    },
+    "python.pythonPath": "/home/miguel/py3/bin/python"
 }
