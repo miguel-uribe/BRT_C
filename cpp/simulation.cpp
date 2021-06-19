@@ -221,7 +221,7 @@ int main (int argc, char **argv){
     // adding the EW fraction
     filename = filename +"_"+to_string(int(100*EWfract))+"_";
     // adding the describer
-    filename = filename + argv[17];
+    filename = filename + argv[24];
     filename = filename + ".txt";
 
     // opening the file

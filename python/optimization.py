@@ -1,255 +1,95 @@
 import numpy as np
 import createFiles
-
-
-# One single simulation of passenger flow
-def oneprocessParFast(LineTimes, factor, s, NStations, NLines, fleet, EWfract, INFile, TRfile, RoutesFile, ):
-      
-  # Setting the Collected buses
-    Collected=[]
-    Collected.append(list(range(0,CEast)))    # East bound
-    Collected.append(list(range(CEast,CEast+CWest)))  # West bound
-    
-    Nbuses=len(Collected[0])+len(Collected[1])
-    Nactivepass=0 # The number of active passengers
-    # Creating the BusesPassengers and StationPassengers
-    
-    BusesPassengers=[[[] for stop in stations] for bus in range(Nbuses)]
-    StationPassengers=[[[] for line in lines] for stop in stations]
-    Passengers=[]
-
-
-    # Creating a single passenger
-    Npassengers=0
-
-
-    Queues=[[],[]]  # O for east bound, 1 for West bound
-    
-    
-    # Creating an empty buses array
-    buses=np.array([])
-    
-    
-    DT=240 # the timelapse to get the average
-    tper=1200 # The periodicity of the measurements
-    counter=1e5
-    # The total counts
-    Ncounts=0
-    
-    Len=limits[1]-limits[0]
-    # evolving the system
-    
-    # the averaged values
-    flow=0    # passenger flow n*v
-    speed=0     # bus average speed
-    passsp=[]    # time averaged passenger speed
-    cost=0     # total cost bus-hour
-    stocc=0    # station occupation N
-    ntrav=0    # travelling passengers 
-    Npass=0    # Total number of passengers in the system
-    Nline=0    # Total number of buses
-
-    for time in np.arange(4*3600,10*3600,1):
-        # Inserting the passengers
-        if time%10==0:
-            npass=np.random.poisson(lam=passengerC.getPassengersDemand(factor,time))
-            Nactivepass+=npass # updating the number of passengers
-            for j in range(npass):
-                Passengers,Npassengers=passengerC.insertPassenger(Passengers,StationPassengers,Npassengers,time,IN,Tr,RouteMatrix, RouteWeight)
-                
-        # Moving the buses
-        [buses,Collected,Queues]=populate(time,LineTimes,LineOffsets,buses,stations,lines,Collected,Queues,LineIDs, limits)
-        Nbuses=len(buses)
-        if Nbuses>0:
-            buses=busC.updatebusorder(buses)
-            busC.buschangelane(buses,lines,stations,time)
-            busC.calculategaps(buses,False,limits)
-            Nactivepass = busC.busadvanceFast(buses,lines,stations,time, BusesPassengers,StationPassengers,Passengers,Nactivepass, passsp) # The number of active passengers is updated
-            buses=busC.collectbusesFast(buses,limits,lines,stations,Collected)
-            cost+=Nbuses
-
-        # we keep counting for DT times
-         # we keep counting for DT times
-        if counter<DT:
-            counter+=1
-            Ncounts+=1
-            [flowT,speedT,ntravT] = busC.getPassengerFlowSpeedOccFast(buses)
-            flow+=flowT
-            speed+=speedT
-            ntrav+=ntravT
-            stocc+=Nactivepass-ntravT
-            Nline+=Nbuses
-
-            
-        # retrieving the bus flow
-        if (time-tper/2)%tper==0: # taken every 20 minutes
-            counter=1
-            Ncounts+=1
-            [flowT,speedT,ntravT] = busC.getPassengerFlowSpeedOccFast(buses)
-            flow+=flowT
-            speed+=speedT
-            ntrav+=ntravT
-            stocc+=Nactivepass-ntravT
-            Nline+=Nbuses
-            
-    # calculating the speed for the passengers at the buses
-    for bus in buses:
-        for k in range(len(stations)):
-            for pas in BusesPassengers[bus[13]][k]:
-                vel=(bus[0]-stations[Passengers[pas][1]].x)/(time-Passengers[pas][4])
-                passsp.append(vel)
-                #print(vel)
-
-    # calcultaing  the speed for the passengers at the stations
-    for k in range(len(stations)):
-        for i in range(len(lines)):
-            for pas in StationPassengers[k][i]:
-                vel=(stations[k].x-stations[Passengers[pas][1]].x)/(time-Passengers[pas][4])
-                passsp.append(vel)
-                #print(vel)
-
-    queue.put([flow/Ncounts/Len, np.mean(np.abs(passsp)), speed/Nline,stocc/Ncounts/len(stations),cost/3600.])
-#    queue.put('Hola')
+import os.path
+import subprocess
+import filecmp
+import multiprocessing
+import time
 
 
 # One multiple simulations to get the average bus flow
-def getPassengerFlowFast(IN, Tr, LineTimes, CEast, CWest, lines,stations,limits, LineIDs, LineOffsets,RouteMatrix, RouteWeight, factor):
+def getPassengerFlowFast(LineIDs, LineTimes,s,factor,fleet,EWfraction,NStations,INfile,TRfile,Routefile):
     
-    
-    # Creating the queue
-    results=multiprocessing.Queue()
-    # The process list
-    procs=[]
 
-    # The number of CPU's
-    Ntimes=multiprocessing.cpu_count()
+    # defining the files
+    IN = INfile
+    TR = TRfile
+    Routes = Routefile
+    Services = '../conf/ServiceDefinition_C1'
+    for S in s:
+        Services+='_'+str(S)    
+    Services+='.txt'
+    # the simulation descriptor
+    descr='test'
 
-    # Creating the processes
-    for i in range(Ntimes):
-        #Creating one iteration process
-        scanflow=multiprocessing.Process(target=oneprocessParFast,args=(IN, Tr, LineTimes, CEast, CWest, lines,stations,limits, LineIDs, LineOffsets, RouteMatrix, RouteWeight, factor,results))
-#        scanflow=multiprocessing.Process(target=testPar, args=(i,results))
-        scanflow.start()
-        procs.append(scanflow)
- 
-    # retrieving all the results
-    allresults=[results.get() for process in procs] 
+    # defining the name of the output file
+    dirname = os.path.dirname(__file__)
+    filename = 'sim_results_C1'
+    for S in s:
+        filename = filename +'_'+str(S)
+    for LT in LineTimes:
+        filename = filename +'_'+str(LT)
+    filename= filename +'_'+ str(factor)+'_'+str(fleet)+'_'+str(int(100*EWfraction))+'_'+descr+'.txt'
+    file = os.path.join(dirname,'../cpp/sim_results/'+filename)
 
-    #Waiting for all processes to stop
-    for process in procs:
-        process.join()
+    if os.path.exists(file):
+        # loading the data
+        data = np.loadtxt(file)
+        stds = data.std(axis = 0)
+        means = data.mean(axis = 0)
+        ratio = stds[1]/means[1]
         
-    flow=[]
-    passSp=[]
-    speed=[]
-    stocc=[] 
-    cost=[]
-
-    # getting the results
-    for result in allresults:
-        [flowI,passSpI,speedI,stoccI, costI]=result
-        flow.append(flowI)
-        passSp.append(passSpI)
-        speed.append(speedI)
-        stocc.append(stoccI)
-        cost.append(costI)
-
-
-
-    # if the statistics are not good enough, we simulate again
-    while((np.std(passSp)/np.mean(passSp)>0.01 or np.std(cost)/np.mean(cost)>0.01 ) and len(flow)<32):
-        # Creating the queue
-        results=multiprocessing.Queue()
-        # The process list
-        procs=[]
-        # Creating the processes
-        for i in range(Ntimes):
-            #Creating one iteration process
-            scanflow=multiprocessing.Process(target=oneprocessParFast,args=(IN, Tr, LineTimes, CEast, CWest, lines,stations,limits, LineIDs, LineOffsets,RouteMatrix, RouteWeight, factor,results))
-    #        scanflow=multiprocessing.Process(target=testPar, args=(i,results))
-            scanflow.start()
-            procs.append(scanflow)
-    
-        # retrieving all the results
-        allresults=[results.get() for process in procs] 
-
-        #Waiting for all processes to stop
-        for process in procs:
-            process.join()
-
-        # getting the results
-        for result in allresults:
-            [flowI,passSpI,speedI,stoccI, costI]=result
-            flow.append(flowI)
-            passSp.append(passSpI)
-            speed.append(speedI)
-            stocc.append(stoccI)
-            cost.append(costI)
-    
-    # results
-    print([np.mean(flow),np.std(flow),np.mean(passSp), np.std(passSp), np.mean(speed), np.std(speed), np.mean(stocc), np.std(stocc), np.mean(cost), np.std(cost)])
-    return [np.mean(flow),np.std(flow),np.mean(passSp), np.std(passSp), np.mean(speed), np.std(speed), np.mean(stocc), np.std(stocc), np.mean(cost), np.std(cost)] 
-
-
-# This function poulates the system with buses:
-def populate(time,linetime,lineoffset, buses, stations, lines, Collected, Queue, lineIDs, limits):
-    # We first check the Queues and attempt to insert the pending buses
-    for i,queue in enumerate(Queue):
-        # we scan over the queues for East and West bound buses
-        for lineID in queue:
-            # If there are buses available this code works
-            try:
-                try: ## In case there are already buses
-                    buses=np.append(buses,[busC.createbus(lineID,limits[i],0,lines,stations,time,0,Collected[i][0])], axis=0)    
-                except:
-                    buses=np.array([busC.createbus(lineID,limits[i],0,lines,stations,time,0,Collected[i][0])])
-                # We remove the element from Collected[0]
-                del Collected[i][0]
-            # otherwise we do nothing
-            except:
-                pass
-                
-    # Now we check and see whether it is time to populate
-    # we scan over the lines
-    for i, lineID in enumerate(lineIDs):
-        if (time-lineoffset[i])%linetime[i]==0:
-            # if i not in [8,9]:
-            #     print("Entered the time requirement for line %d"%lineID)
-            # if acc>0 , we check the Collect[0]
-            if lines[lineID].acc>0:
-                # if there are available buses
+    else:
+        # running the pool of processes
+        Ntimes=multiprocessing.cpu_count()
+        counter = 0
+        while(True):
+            procs=[]
+            # Creating the processes
+            for i in range(Ntimes):
+                dirname=os.path.dirname(__file__)
+                program = os.path.join(dirname,"./../cpp/simulation")
+                command = [program]
+                command = command + ['%d'%(i+counter)]
+                command = command + [str(x) for x in LineTimes]
+                command = command + [str(x) for x in s]
+                command = command + [str(EWfraction), IN, TR, Routes, descr]
+                # print(command)
+                #Creating one iteration process
+                procs.append(subprocess.Popen(command))
+            
+            
+            # waiting for all processes to finish
+            while(True):
                 try:
-                    try: # in case there are already buses
-                        buses=np.append(buses,[busC.createbus(lineID,limits[0],0,lines,stations,time,0,Collected[0][0])], axis=0)  
-                        
-                    except: # in case there are not
-                        buses=np.array([busC.createbus(lineID,limits[0],0,lines,stations,time,0,Collected[0][0])])
-                        
-                    # We remove the element from Collected[0]
-                    del Collected[0][0]
-                # if this fails it is because there are no buses available, we increase the Queue
+                    np.sum([proc.poll() for proc in procs])
+                    break
                 except:
-                    # We increase the Queue[0]
-                    Queue[0].append(lineID)
+                    pass
+                time.sleep(0.05)
 
-            # if acc<0 , we check the Collect[1]
-            else:
-                # if there are available buses
-                try:
-                    # in case there are already buses
-                    try:
-                        buses=np.append(buses,[busC.createbus(lineID,limits[1],0,lines,stations,time,0,Collected[1][0])], axis=0)    
-                    # if this is the first bus
-                    except:
-                         buses=np.array([busC.createbus(lineID,limits[1],0,lines,stations,time,0,Collected[1][0])])                  
-                    # We remove the element from Collected[1]
-                    del Collected[1][0]
-                # if this fails it is because there are no buses available, we increase the Queue
-                except:
-                    # We increase the Queue[0]
-                    Queue[1].append(lineID)
-       # print(len(buses))
-    return [buses,Collected,Queue]
+            # loading the data
+            data = np.loadtxt(file)
+            stds = data.std(axis = 0)
+            means = data.mean(axis = 0)
+            ratio = stds[1]/means[1]
+            
+            if ratio<0.01 and len(data)>15:
+                break
+            
+            elif len(data)>32:
+                break
+
+            # adding the counter
+            counter+=100
+        
+    # the results
+    results = []
+    for i in range(1,len(stds)):
+        results.append(means[i])
+        results.append(stds[i])
+    
+    return results    
 
 
 ################################################################

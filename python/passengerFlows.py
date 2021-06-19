@@ -5,20 +5,13 @@ Created on Sat Nov 04 09:25:32 2017
 @author: miguel
 """
 
-import createFiles
+
 import numpy as np
+import optimization
 import os.path
 import subprocess
-import multiprocessing
-
-
-# Return the file, create it if it does not exist and open it if it does
-def checkfile(filename):
-    if os.path.isfile(filename):
-        f=open(filename,'a')
-    else:
-        f=open(filename,'w')
-    return f
+import createFiles
+import filecmp
 
 
 if __name__ == '__main__':  
@@ -28,7 +21,7 @@ if __name__ == '__main__':
     
     # The Line IDs, times and offsets
     LineIDs=[0,1,2,3,4,5,6,7,8,9]
-    LineTimes = [60,60,60,60,60,60,60,60,60,60]
+    LineTimes = [100,200,100,200,200,200,100,200,60000,60000]
 
     # The stop cinfiguration
     s=[1,3,1,3,2,2,3,1]    
@@ -37,44 +30,35 @@ if __name__ == '__main__':
     factor = 15000
 
     # fleet size
-    fleet = 100
+    fleet = 2000    
 
     # EWfraction
     EWfraction = 0.5
 
+    # Nstations
+    NStations = 25
+
+    # the files
+    INfile = '../conf/IN.txt'
+    TRfile = '../conf/TR.txt'
+    RMfile = '../conf/RouteMatrix.txt'
+
+
+    #####################################################
+    # creating a backup for fleet size file
+    dirname = os.path.dirname(__file__)
+    dirname = os.path.join(dirname,'../cpp/')
+    subprocess.run(['cp','fleetsize.h','fleetsize.bck'],cwd=dirname)
 
     #####################################################
     # creating the files for the cpp program
-    NStations = 25
     createFiles.createServicesC1(s, NStations, len(LineIDs))
     createFiles.createConfFile(NStations,len(LineIDs),fleet,factor)
 
-    # defining the files
-    IN = '../conf/IN.txt'
-    TR = '../conf/TR.txt'
-    Routes = '../conf/RouteMatrix.txt'
-    Services = '../conf/ServiceDefinition_C1'
-    for S in s:
-        Services+='_'+str(S)    
-    Services+='.txt'
-    # the simulation descriptor
-    descr='test'
+    # once the files are created we compile the cpp script if there are changes
+    if (not filecmp.cmp(dirname+'fleetsize.h',dirname+'fleetsize.bck')):
+        print('Recompiling')
+        comp = subprocess.run(['g++','-O2','simulation.cpp','-o','simulation'], cwd=dirname)
 
-    Ntimes=multiprocessing.cpu_count()
-    procs=[]
-    # Creating the processes
-    for i in range(Ntimes):
-        dirname=os.path.dirname(__file__)
-        program = os.path.join(dirname,"./../cpp/simulation")
-        command = [program]
-        command = command + ['%d'%i]
-        command = command + [str(x) for x in LineTimes]
-        command = command + [str(x) for x in s]
-        command = command + [str(EWfraction), IN, TR, Routes, descr]
-        # print(command)
-        #Creating one iteration process
-        subprocess.Popen(command)
-    
-
-
-    
+    # calling the script
+    print(optimization.getPassengerFlowFast(LineIDs,LineTimes,s,factor,fleet,EWfraction, NStations,INfile,TRfile,RMfile))
