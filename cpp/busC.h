@@ -557,17 +557,20 @@ void busadvance(std::vector<int> BUSESPAR[Nparam], std::vector<bool> BUSESBOOL[N
                 BUSESPAR[2][i]=0;
                 BUSESBOOL[1][i]=false;
                 BUSESPAR[13][i]=0;
-                // we also set the dwell time
-                BUSESPAR[14][i]=getDwellTime(BUSESPAR[17][i],BUSESPAR[8][i],BUSESPAR[11][i],BUSPASSENGERS,STPASSENGERS, PASSENGERS);
-                // we board and alight passengers
-                BUSESPAR[16][i]=busArriving(BUSESPAR[17][i],BUSESPAR[8][i],BUSESPAR[11][i],TIME,NACTIVEPASS,PASSSP,BUSPASSENGERS,STPASSENGERS,PASSENGERS,MATRIX, SYSTEM, BUSESPAR[16][i]);
+                // we board and alight passengers, and set the dwell time
+                busdata results;
+                results=busArriving(BUSESPAR[17][i],BUSESPAR[8][i],BUSESPAR[11][i],TIME,NACTIVEPASS,PASSSP,BUSPASSENGERS,STPASSENGERS,PASSENGERS,MATRIX, SYSTEM, BUSESPAR[16][i]);
+                BUSESPAR[14][i] = results.dwelltime;
+                BUSESPAR[16][i] = results.busoccupation;
                 // we update the stop information
                 updatestop(i,BUSESPAR,SYSTEM);
             }
+
             // checking whether the bus leaves the system
             else if (BUSESPAR[0][i]<SYSTEM.limits[0]){
                 //We add the speed of the bus to the list
                 bussp.push_back(float(SYSTEM.limits[1]-BUSESPAR[0][i])/(TIME-BUSESPAR[18][i]));
+               // std::cout<<"////"<<BUSESPAR[17][i]<<" "<<bussp.back()<<std::endl;
                 /*if (bussp.back()>10){
                     std::cout<<TIME<<" "<<i<<" "<<bussp.back()<<" "<<BUSESPAR[0][i]<<" "<<BUSESPAR[10][i]<<" "<<BUSESPAR[1][i]<<" "<<BUSESPAR[17][i]<<std::endl;
                 }*/
@@ -600,6 +603,7 @@ void busadvance(std::vector<int> BUSESPAR[Nparam], std::vector<bool> BUSESBOOL[N
             else if (BUSESPAR[0][i]>SYSTEM.limits[1]){
                 //We add the speed of the bus to the list
                 bussp.push_back(float(BUSESPAR[0][i]-SYSTEM.limits[0])/(TIME-BUSESPAR[18][i]));///(TIME-BUSESPAR[18][i]));
+                //std::cout<<"////"<<BUSESPAR[17][i]<<" "<<bussp.back()<<std::endl;
                 // we update the cost value
                 cost+=TIME-BUSESPAR[18][i];
                 // we check whether there are people in the bus
@@ -646,7 +650,7 @@ void busadvance(std::vector<int> BUSESPAR[Nparam], std::vector<bool> BUSESBOOL[N
         file<<BUSESPAR[0][i]<<" "<<BUSESPAR[2][i]<<std::endl;
         file.close();*/
     
-        /*if (BUSESPAR[17][i]==1){
+    /*    if (BUSESPAR[17][i]==1){
             std::cout<<TIME<<" "<<SYSTEM.limits[1]<<" ";
             for (int j=0; j<Nparam; j++){
                 std::cout<<BUSESPAR[j][i]<<" ";
@@ -668,10 +672,13 @@ void busadvance(std::vector<int> BUSESPAR[Nparam], std::vector<bool> BUSESBOOL[N
     }
 /*
     for (int i =0; i<BUSESPAR[0].size(); i++){
-        std::cout<<BUSESPAR[0][i]<<"("<<BUSESPAR[17][i]<<","<< BUSESPAR[11][i]<<") ";
+        for ( int j =0; j<Nparam; j++){
+            std::cout<<BUSESPAR[j][i]<<" ";
+        }
+        std::cout<<std::endl;
     }
-    std::cout<<std::endl;
-*/
+    std::cout<<std::endl;*/
+
 }
 
 // 

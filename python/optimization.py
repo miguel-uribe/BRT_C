@@ -8,28 +8,27 @@ import time
 
 
 # One multiple simulations to get the average bus flow
-def getPassengerFlowFast(LineIDs, LineTimes,s,factor,fleet,EWfraction,NStations,INfile,TRfile,Routefile):
+def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf):
     
 
     # defining the files
     IN = INfile
     TR = TRfile
     Routes = Routefile
-    Services = '../conf/ServiceDefinition_C1'
+    Services = '../conf/ServiceDefinition_'+conf
     for S in s:
         Services+='_'+str(S)    
     Services+='.txt'
-    # the simulation descriptor
-    descr='test'
+
 
     # defining the name of the output file
     dirname = os.path.dirname(__file__)
-    filename = 'sim_results_C1'
+    filename = 'sim_results_'+conf
     for S in s:
         filename = filename +'_'+str(S)
     for LT in LineTimes:
-        filename = filename +'_'+str(LT)
-    filename= filename +'_'+ str(factor)+'_'+str(fleet)+'_'+str(int(100*EWfraction))+'_'+descr+'.txt'
+        filename = filename +'_'+str(int(LT))
+    filename= filename +'_'+ str(factor)+'_'+str(fleet)+'_'+str(int(100*EWfraction))+'.txt'
     file = os.path.join(dirname,'../cpp/sim_results/'+filename)
 
     if os.path.exists(file):
@@ -53,7 +52,7 @@ def getPassengerFlowFast(LineIDs, LineTimes,s,factor,fleet,EWfraction,NStations,
                 command = command + ['%d'%(i+counter)]
                 command = command + [str(x) for x in LineTimes]
                 command = command + [str(x) for x in s]
-                command = command + [str(EWfraction), IN, TR, Routes, descr]
+                command = command + [str(EWfraction), IN, TR, Routes,conf]
                 # print(command)
                 #Creating one iteration process
                 procs.append(subprocess.Popen(command))
@@ -206,7 +205,7 @@ def GAinitialize(npopu, *args):
 def GAmutate(persb,mprob):
     pbinnew=''
     for b in persb:
-        dice=random.random()
+        dice=np.random.random()
         if dice<mprob:
             if b=='1':
                 pbinnew=pbinnew+'0'
@@ -224,7 +223,7 @@ def GAmate(pbina,pbinb,mprob):
     # getting the length of the binaries
     nbin=len(pbina)
     # obtaining the crossover point
-    cross=random.randint(0,nbin+1)
+    cross=np.random.randint(0,nbin+1)
     # performing crossover and mutation
     pbinc=pbina[:cross]+pbinb[cross:]
     pbinc=GAmutate(pbinc,mprob)
@@ -297,7 +296,7 @@ def GAnewgen(population,popfitness,mprob):
 
 
 # This function gets the fitness of a population and sorts it
-def GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, RouteMatrix, RouteWeight, factor, nu, fleet, filename, *args):
+def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, *args):
     print("In GAgetfitness")   
     results=0
     while results==0:
@@ -306,15 +305,13 @@ def GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, Rou
             # Now we scan over the remaining part of the population in series
             for pop in population[1:]:
                 # Getting the information from the chromosome
-                LineTimes,fact = GAgetPers(pop)
-                CEast=int(fleet*fact)
-                CWest=fleet-CEast
+                LineTimes,EWfraction = GAgetPers(pop)
 
                 # creating the temporary file
                 filenametemp=filename
                 for LT in LineTimes:
                     filenametemp=filenametemp+'_%d'%LT
-                filenametemp=filenametemp+'_%f.tmp'%fact
+                filenametemp=filenametemp+'_%f.tmp'%EWfraction
 
                 # We first check whether the calculation is in execution in other node:
                 if os.path.isfile(filenametemp):
@@ -344,7 +341,8 @@ def GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, Rou
 
                 # Running the simulation
                 print("simulating for %s"%pop)
-                [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(IN, Tr, LineTimes, CEast, CWest, lines,stations,limits, lineIDs, LineOffsets, RouteMatrix, RouteWeight, factor)
+                [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf)
+                
                 print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
                 # printing the results to a file
                 FILEHIST=checkfile(filename+'_hist.txt')
@@ -371,15 +369,13 @@ def GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, Rou
             for pop in population:
 
                 # Getting the information from the chromosome
-                LineTimes,fact = GAgetPers(pop)
-                CEast=int(fleet*fact)
-                CWest=fleet-CEast
+                LineTimes,EWfraction = GAgetPers(pop)
 
                 # creating the temporary file
                 filenametemp=filename
                 for LT in LineTimes:
                     filenametemp=filenametemp+'_%d'%LT
-                filenametemp=filenametemp+'_%f.tmp'%fact
+                filenametemp=filenametemp+'_%f.tmp'%EWfraction
                 
                 # We first check whether the calculation is in execution in other node:
                 if os.path.isfile(filenametemp):
@@ -409,7 +405,7 @@ def GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, Rou
 
                 # Running the simulation
                 print("simulating for %s"%pop)
-                [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(IN, Tr, LineTimes, CEast, CWest, lines,stations,limits, lineIDs, LineOffsets, RouteMatrix, RouteWeight, factor)
+                [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf)
                 print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
                 # printing the results to a file
                 FILEHIST=checkfile(filename+'_hist.txt')
@@ -521,7 +517,7 @@ def readResults(population, filename, nu, factor, *args):
     
 
 # Running the optimization
-def GAoptimize(IN,Tr,lines,stations,limits,lineIDs,LineOffsets,RouteMatrix,RouteWeight,factor,nu,fleet,npopu,mprob,ntol,filename,*args):
+def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol,filename,*args):
     # Number of evaluations
     Neval=0
     # We start by checking whether there is a population file
@@ -547,7 +543,7 @@ def GAoptimize(IN,Tr,lines,stations,limits,lineIDs,LineOffsets,RouteMatrix,Route
     # Printing the population
     print(population)    
     # We calculate the fitness and sort the population
-    [population,totcosts,totcostSDs]=GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, RouteMatrix, RouteWeight, factor, nu, fleet, filename) # this might have to be changed
+    [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename) # this might have to be changed
     Neval=Neval+npopu-npopu%2 # The number of evaluation is updated
     # We establish the best one
     bestp=population[0]
@@ -586,11 +582,11 @@ def GAoptimize(IN,Tr,lines,stations,limits,lineIDs,LineOffsets,RouteMatrix,Route
             # The bests correspond to the first element after GANewgen
             bests=[bestTC,bestTCSD]
             print("Launching GAgetfitness with elitism")
-            [population,totcosts,totcostSDs]=GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, RouteMatrix, RouteWeight, factor, nu, fleet,filename,bests)
+            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, bests)
         # If there is not elitism
         else:
             print("Launching GA getfitness without elitism")
-            [population,totcosts,totcostSDs]=GAgetfitness(population,IN,Tr,lines,stations,limits,lineIDs,LineOffsets, RouteMatrix, RouteWeight, factor, nu, fleet, filename)
+            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename)
         Neval=Neval+npopu-npopu%2 # The number of evaluation is updated
         # We check whether there has been an improvement
         if totcosts[0]<bestTC:

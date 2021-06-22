@@ -14,7 +14,7 @@ struct System
     stationC Stations[NStations];
     int limits[2];
 };
-
+/*
 auto createsystem(std::vector <std::vector<int>> wagons,std::vector <std::vector<int>> stoplist){
     // Creating the structure of the system
     System SYSTEM;
@@ -56,7 +56,7 @@ auto createsystem(std::vector <std::vector<int>> wagons,std::vector <std::vector
 
     return (SYSTEM);
 
-}
+}*/
 
 auto createsystem(std::string filename){
     // Creating the structure of the system
@@ -120,8 +120,8 @@ auto createsystem(std::string filename){
     // we now need to create the empty lines
     
     std::vector<int> aux;
-    SYSTEM.Lines[Nlines-2]=lineC("E10",aux, aux,SYSTEM.Stations, 1);
-    SYSTEM.Lines[Nlines-1]=lineC("W10",aux, aux,SYSTEM.Stations, -1);
+    SYSTEM.Lines[Nlines-2]=lineC("E"+std::to_string(Nlines-2),aux, aux,SYSTEM.Stations, 1);
+    SYSTEM.Lines[Nlines-1]=lineC("W"+std::to_string(Nlines-1),aux, aux,SYSTEM.Stations, -1);
 
     int xmax=SYSTEM.Stations[NStations-1].x+(Nw-1)*Ds+Dw+gap;
     SYSTEM.limits[0]=xmin;

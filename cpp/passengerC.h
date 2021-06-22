@@ -125,25 +125,38 @@ void alightpassenger(int passID, int busID, int stationID, int TIME, int& Nactiv
 //This function calculates the dwell time as a function of the waiting boarding and alightning passengers
 int getDwellTime(int busID,int stationID,int lineID, std::vector<int>  BUSPASSENGERS[fleet], std::vector<int>  STPASSENGERS[NStations], std::vector<std::array<int, nparpass>> & PASSENGERS){
     int npass=0;
-    for (int i=0; i<BUSPASSENGERS[busID].size(); i++){ // looking foir passenger whiling to alight
+    for (int i=0; i<BUSPASSENGERS[busID].size(); i++){ // looking for passenger whiling to alight
         if(PASSENGERS[i].back()==stationID){
-            npass++;
+            //std::cout<<"here"<<std::endl;
+            npass = npass +1;
         }
     }
     for (int i=0; i<STPASSENGERS[stationID].size(); i++){ // looking foir passenger whiling to alight
         if(PASSENGERS[i].back()==lineID){
-            npass++;
+            //std::cout<<"here"<<std::endl;
+            npass = npass +1;
         }
     }
     // The dwell time is a linear function
-    int dwelltime = std::min(MaxDwell,int(D0+D1*(npass)));
+    int dwelltime = std::min(MaxDwell,int(D0+D1*npass));
+    
+
+    std::cout<<busID<<" "<<stationID<<" "<<lineID<<" "<<npass<<" "<<dwelltime<<std::endl;
+    
     return dwelltime;
 }
 
 
+struct busdata
+{
+    int dwelltime;
+    int busoccupation;
+};
+
 // This function must be called when a bus arrives at a station
-int busArriving(int busID, int stationID, int lineID, int TIME, int &Nactivepass,  float &passsp, std::vector<int> BUSPASSENGERS[fleet],
+auto busArriving(int busID, int stationID, int lineID, int TIME, int &Nactivepass,  float &passsp, std::vector<int> BUSPASSENGERS[fleet],
    std::vector<int> STPASSENGERS[NStations], std::vector<std::array<int, nparpass>> & PASSENGERS, std::vector<routeC> MATRIX[NStations][NStations], System SYSTEM, int busOcc){
+    //std::cout<<busOcc<<" ";
     // first, all the alightning passengers are allowed to descend
    // std::cout<<"Alightning passengers from bus with ID "<<busID<<" with initial occupation "<<busOcc<<" arriving at station "<<stationID<<std::endl;
     //looking for passengers to alight
@@ -153,6 +166,8 @@ int busArriving(int busID, int stationID, int lineID, int TIME, int &Nactivepass
                 toAlight.push_back(BUSPASSENGERS[busID][i]); // we enter the passenger to the descending list
         }
     }
+    // to calculate the dwell time
+    int npass = toAlight.size();
     // now we scan over the descending list
     for (int i =0; i<toAlight.size(); i++){
         // alight passenger 
@@ -168,6 +183,7 @@ int busArriving(int busID, int stationID, int lineID, int TIME, int &Nactivepass
     std::vector<int> aux2 = STPASSENGERS[stationID]; // a copy of the passenger list
     for(int passid: aux2){
         if (PASSENGERS[passid].back()==lineID){// in case the next line is the current line
+            npass++;
             // we calculate the boarding probability
             float prob=boardingProbability(BusCap,busOcc,BusRate);
             // we throw the dice
@@ -181,8 +197,13 @@ int busArriving(int busID, int stationID, int lineID, int TIME, int &Nactivepass
             }
         }
     }
+
+    busdata Results;
+    Results.dwelltime = std::min(MaxDwell,int(D0+D1*npass));
+    Results.busoccupation = busOcc;
+    //std::cout<<Results.busoccupation<<" "<<busID<<" "<<stationID<<" "<<lineID<<" "<<npass<<" "<<Results.dwelltime<<" "<<npass<<std::endl;
     //std::cout<<"New bus occupation of bus with ID "<<busID<<": "<<busOcc<<" passengers"<<std::endl;
-    return busOcc;
+    return Results;
 }
 
 // This function tells the system to create a new passenger

@@ -26,7 +26,7 @@ int main (int argc, char **argv){
     // 21 IN file               
     // 22 TR file
     // 23 Routes file
-    // 24 the simulation description string
+    // 24 the configuration
 
 
     ///////////////////////////////////////////
@@ -70,7 +70,8 @@ int main (int argc, char **argv){
     /////////////////////////////////////////////////////////////
     // Creating the system
     System SYSTEM;
-    string servicefile = "../conf/ServiceDefinition_C1";
+    string servicefile = "../conf/ServiceDefinition_";
+    servicefile = servicefile + argv[24];
     for (int j=12; j<20; j++){
         servicefile = servicefile+"_"+argv[j];
     }
@@ -98,6 +99,7 @@ int main (int argc, char **argv){
     // the seed
     int seed = stoi(argv[1]);
     std::default_random_engine generator (seed);
+    srand(seed);
     //cout<<"Defined the seed"<< endl;   
     ///////////////////////////////////////////////////////////////
     // Creating the bus array
@@ -161,7 +163,6 @@ int main (int argc, char **argv){
 
    // cout<<"Finished the simulation"<< endl;   
 
-
     /////////////////////////////////////////////////////////
     // calculating the speed for the passengers in the buses
     for (int i = 0; i<BusesPar[0].size(); i++){ // we scan over the buses
@@ -182,17 +183,20 @@ int main (int argc, char **argv){
         if (BusesPar[10][i]>0){ // the bus moves to the east
             origin = SYSTEM.limits[0];
             bussp.push_back(float(BusesPar[0][i]-origin)/(10*3600-1-BusesPar[18][i]));
+            //cout<<bussp.back()<<" >0"<<endl;
         } 
-        else if (BusesPar[10][i]<0) // the bus moves to the west
+        else if (BusesPar[10][i]<0){ // the bus moves to the west
             origin = SYSTEM.limits[1];
             bussp.push_back(float(origin-BusesPar[0][i])/(10*3600-1-BusesPar[18][i]));
+            //cout<<bussp.back()<<" <0"<<endl;
+        }
         cost+=(10*3600-BusesPar[18][i]);
     }
 
 
     float BSP=0;
     for (int i = 0; i<bussp.size(); i++){
-        //cout<<bussp[i]<<endl;
+       // cout<<bussp[i]<<endl;
         BSP+=bussp[i];
     }
 
@@ -205,7 +209,9 @@ int main (int argc, char **argv){
 
     /////////////////////////////////////////////////////////
     // exporting the data
-    string filename = "../cpp/sim_results/sim_results_C1";
+    string filename = "../cpp/sim_results/sim_results_";
+    // adding the configuration
+    filename = filename + argv[24];
     // adding the stop arrangement
     for (int j =12; j<20; j++){
         filename = filename + "_"+argv[j];
@@ -219,10 +225,7 @@ int main (int argc, char **argv){
     // adding the fleet
     filename = filename +"_"+to_string(fleet);
     // adding the EW fraction
-    filename = filename +"_"+to_string(int(100*EWfract))+"_";
-    // adding the describer
-    filename = filename + argv[24];
-    filename = filename + ".txt";
+    filename = filename +"_"+to_string(int(100*EWfract))+".txt";
 
     // opening the file
     ofstream outfile;

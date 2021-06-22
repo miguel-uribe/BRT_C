@@ -6,14 +6,13 @@ Created on Sat Nov 04 09:25:32 2017
 """
 
 import createFiles
-import createSystem
+import subprocess
 import optimization
-import parameters
 import numpy as np
-import routeC
 import sys
 import os.path
 import os
+import filecmp
 
 # This script should be called as optimizeFreqFrac_parent.py factor fleet nu s0 s1 s2 s3 npopu mprob ntol seed firstchromo
 
@@ -86,8 +85,30 @@ if __name__ == '__main__':
     LineIDs=[0,1,2,3,4,5,6,7,8,9]
         
     # creating the files for the cpp program
-    NStations = 24
-    createFiles.createServicesC1(s, NStations, len(LineIDs))
+    NStations = 45
+
+    # the configuration
+    conf = 'C2'
+
+    # the files
+    INfile = '../conf/IN.txt'
+    TRfile = '../conf/TR.txt'
+    RMfile = '../conf/RouteMatrix.txt'
+
+    #####################################################
+    # creating a backup for fleet size file
+    dirname = os.path.dirname(__file__)
+    dirname = os.path.join(dirname,'../cpp/')
+    subprocess.run(['cp','fleetsize.h','fleetsize.bck'],cwd=dirname)
+
+    #####################################################
+    # creating the files for the cpp program
+    createFiles.createServices(s, NStations, len(LineIDs),conf)
+    createFiles.createConfFile(NStations,len(LineIDs),fleet,factor)
+    # once the files are created we compile the cpp script if there are changes
+    if (not filecmp.cmp(dirname+'fleetsize.h',dirname+'fleetsize.bck')):
+        print('Recompiling')
+        comp = subprocess.run(['g++','-O2','simulation.cpp','-o','simulation'], cwd=dirname)
 
     # creating the root filename
     fileroot=createfilename(sys.argv)
@@ -99,10 +120,10 @@ if __name__ == '__main__':
 
     #starting the optimization 
     if len(sys.argv) == 12:
-        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(IN,Tr,lines,stations,limits,LineIDs,LineOffsets,RouteMatrix,RouteWeight,factor,nu,fleet,npopu,mprob,ntol,fileroot)
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot)
     
     elif len(sys.argv) == 13:
-        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(IN,Tr,lines,stations,limits,LineIDs,LineOffsets,RouteMatrix,RouteWeight,factor,nu,fleet,npopu,mprob,ntol,fileroot, firstchromo)
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, firstchromo)
 
     #When the script finishes we create a finished file
     finished = open(fileroot+'_finished.tmp', 'w')

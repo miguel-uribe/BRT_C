@@ -21,13 +21,14 @@ if __name__ == '__main__':
     
     # The Line IDs, times and offsets
     LineIDs=[0,1,2,3,4,5,6,7,8,9]
-    LineTimes = [100,200,100,200,200,200,100,200,60000,60000]
+    LineTimes = [50,500,500,500,500,200,100,200,60000,60000]
+    LineTimes = [60000]+[20]+[60000]*8#+[60000]
 
     # The stop cinfiguration
     s=[1,3,1,3,2,2,3,1]    
 
     # passenger factor
-    factor = 15000
+    factor = 0
 
     # fleet size
     fleet = 2000    
@@ -36,7 +37,10 @@ if __name__ == '__main__':
     EWfraction = 0.5
 
     # Nstations
-    NStations = 25
+    NStations = 45
+
+    # configuration
+    conf = 'C2'
 
     # the files
     INfile = '../conf/IN.txt'
@@ -52,7 +56,7 @@ if __name__ == '__main__':
 
     #####################################################
     # creating the files for the cpp program
-    createFiles.createServicesC1(s, NStations, len(LineIDs))
+    createFiles.createServices(s, NStations, len(LineIDs),conf)
     createFiles.createConfFile(NStations,len(LineIDs),fleet,factor)
 
     # once the files are created we compile the cpp script if there are changes
@@ -60,5 +64,24 @@ if __name__ == '__main__':
         print('Recompiling')
         comp = subprocess.run(['g++','-O2','simulation.cpp','-o','simulation'], cwd=dirname)
 
+    #####################################################
+    ################# ONE SINGLE SCRIPT
+    seed = 100
+    dirname=os.path.dirname(__file__)
+    program = os.path.join(dirname,"./../cpp/simulation")
+    command = [program]
+    command = command + ['%d'%seed]
+    command = command + [str(x) for x in LineTimes]
+    command = command + [str(x) for x in s]
+    command = command + [str(EWfraction), INfile, TRfile, RMfile,conf]
+    # print(command)
+    #Creating one iteration process
+    subprocess.run(command)
+
+"""
+    ############################################################################
+    ################ PARALLEL SCRIPT
+
     # calling the script
-    print(optimization.getPassengerFlowFast(LineIDs,LineTimes,s,factor,fleet,EWfraction, NStations,INfile,TRfile,RMfile))
+    print(optimization.getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,RMfile, conf))
+"""

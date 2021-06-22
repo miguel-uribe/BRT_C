@@ -4,15 +4,14 @@ Created on Thu Mar 16 09:53:10 2017
 
 @author: miguelurla
 """
-from __future__ import division
-import parameters
+
 import stationC
 import lineC
 import numpy as np
 import random
 
 
-def createsystem (wagons, stoplist):
+def createsystem (filename, NStations):
 
     # The maximum size 
     xmin=0
@@ -20,10 +19,24 @@ def createsystem (wagons, stoplist):
     #Creating all stations
     # This system consisis of Nstations stations in a straight line separated by a distance DS in cell units
     stations=[]
-    for i in range(parameters.NStations):
+    for i in range(NStations):
         name="S"+"%d"%i
-        stations.append(stationC.stationC(name,parameters.gap+i*parameters.DS,i))
+        stations.append(stationC.stationC(name,100+i*100,i))
         
+
+    # reading the service definition file
+    data = open(filename, 'r').readlines()
+    data = [line.split() for line in data]
+    data = [[int(num) for num in line] for line in data]
+
+    # creating the stoplists and wagons list
+    stoplist = data[::2]
+    wagons = data[1::2]
+
+    print(stoplist)
+    print(wagons)
+
+
     #Creating all lines, three lines eastbound, three lines westbound
     lines=[]
     
@@ -35,7 +48,7 @@ def createsystem (wagons, stoplist):
         else:
             acc=-1        
             name = "W%d"%j
-        lines.append(lineC.lineC(name,list(stoplist[j]),list(wagons[j][stoplist[j]]),stations,acc,j))
+        lines.append(lineC.lineC(name,list(stoplist[j]),list(wagons[j]),stations,acc,j))
 
     
     # ET-WT lines with no stops
@@ -43,112 +56,47 @@ def createsystem (wagons, stoplist):
     stationIDs=[]
     stops=[]
         
-    lines.append(lineC.lineC("ET",stationIDs,stops,stations,1,8))
-    lines.append(lineC.lineC("WT",list(reversed(stationIDs)),stops,stations,-1,9))
-    
-    
-#    #E2-W2 lines stopping every five stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops every nine station
-#    for i in range(0,parameters.NStations,2):
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[4])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E2",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W2",list(reversed(stationIDs)),stops,stations,-1))
-#    
-#    #E3a-W3a lines stopping every three stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops every three stations
-#    for i in range(1,parameters.NStations,3):
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[1])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E3",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W3",list(reversed(stationIDs)),stops,stations,-1))  
-#    
-#    
-#    #E3b-W3b lines stopping every three stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops every three stations
-#    for i in range(2,parameters.NStations,3):
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[1])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E3",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W3",list(reversed(stationIDs)),stops,stations,-1))     
-#    
-#    #E9a-E9b lines stopping every three stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops, in average, every nine station
-#    ranStations=[2,7,20,25,38]
-#    for i in ranStations:
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[3])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E9a",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W9a",list(reversed(stationIDs)),stops,stations,-1))
-#
-#    #E9b-W9b lines stopping every three stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops, in average, every nine station
-#    ranStations=[4,5,22,23,40]
-#    for i in ranStations:
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[3])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E9b",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W9b",list(reversed(stationIDs)),stops,stations,-1))    
-#    
-#     #E9c-W9c lines stopping every three stations
-#    stationIDs=[]
-#    stops=[]
-#    
-#    # This loop creates a line that stops, in average, every nine station
-#    ranStations=[3,6,21,24,39]
-#    for i in ranStations:
-#        stationIDs.append(stations[i].ID)
-#        stops.append(s[3])  # This number indicates the wagon where the line stops
-#        
-#    lines.append(lineC.lineC("E9c",stationIDs,stops,stations,1))
-#    lines.append(lineC.lineC("W9c",list(reversed(stationIDs)),stops,stations,-1))    
-#    
+    lines.append(lineC.lineC("ET",stationIDs,stops,stations,1,len(stoplist)))
+    lines.append(lineC.lineC("WT",stationIDs,stops,stations,-1,len(stoplist)+1))
     
     
     # Establish the size of the system
-    size=stations[-1].x+(stations[-1].wagons-1)*parameters.Ds+parameters.Dw+parameters.gap
+    size=stations[-1].x+(stations[-1].wagons-1)*100+10+10
     
     
     limits=[xmin,size]
     for line in lines:
         print(line)
     print(limits)
+
     return [lines,stations,limits]
 
 
 # This function creates an input matrix
-def createInput(Nstations):
-    X=np.arange(Nstations)
-    W=1.3*np.exp(-X**2/70)+np.exp(-(X-24)**2/70)
-    W=W/np.sum(W)
-    return W
+def createInput(Nstations, conf):
+    if conf == 'C1':
+        X=np.arange(Nstations)
+        W=1.3*np.exp(-X**2/70)+np.exp(-(X-24)**2/70)
+        W=W/np.sum(W)
+        return W
+    elif conf == 'C2':
+        X=np.arange(Nstations)
+        W=1.3*np.exp(-X**2/250)+np.exp(-(X-45)**2/150)
+        W=W/np.sum(W)
+        return W
 
 # This function creates an output matrix
-def createOutput(Nstations):
-    X=np.arange(Nstations)
-    W=1.3*np.exp(-(X-8)**2/30)+np.exp(-(X-18)**2/20)
-    W=W/np.sum(W)
-    return W
+def createOutput(Nstations, conf):
+    if conf == 'C1':
+        X=np.arange(Nstations)
+        W=1.3*np.exp(-(X-8)**2/30)+np.exp(-(X-18)**2/20)
+        W=W/np.sum(W)
+        return W
+    elif conf == 'C2':
+        X=np.arange(Nstations)
+        W=1.3*np.exp(-(X-15)**2/70)+np.exp(-(X-35)**2/100)
+        W=W/np.sum(W)
+        return W
 
 # This function creates a transfer matrix column
 def createTransferColumn(Nstations,initID, kind):
