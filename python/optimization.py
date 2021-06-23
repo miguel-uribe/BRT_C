@@ -361,7 +361,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                     # checking the results
             results=readResults(population,filename, nu, factor, args[0])
             if results == 0:
-                time.sleep(60)
+                time.sleep(10)
 
                 # This one applies for the first fitness evaluation or the case without elitism
         else:
