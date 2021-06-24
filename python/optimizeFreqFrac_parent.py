@@ -112,6 +112,8 @@ if __name__ == '__main__':
 
     # creating the root filename
     fileroot=createfilename(sys.argv)
+
+    
     
     # removing all temporary files first
     for File in os.listdir(basedata):

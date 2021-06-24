@@ -120,7 +120,7 @@ def GAgetChromo(pers, frac):
     if (pers[-2]<800) and (pers[-1]<800):
         print("Warning! Periods for R9 and R10 are both lower than 800. Setting R10=1e6")
     
-    print(pers[-2])
+    #print(pers[-2])
     if pers[-2]<800: # if R9 is the one working
         p=int((pers[-2]-100)/100)
         chrom=chrom+'0'+GAinttobin(p,3)
@@ -306,7 +306,8 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
             for pop in population[1:]:
                 # Getting the information from the chromosome
                 LineTimes,EWfraction = GAgetPers(pop)
-
+                
+                """
                 # creating the temporary file
                 filenametemp=filename
                 for LT in LineTimes:
@@ -317,7 +318,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 if os.path.isfile(filenametemp):
                     print("calculation is being carried out in another node for %s"%pop)
                     continue  # if it exists, the calculation is being performed in another node
-
+                """
                 # if it is not in execution, we look for previous data
                 # importing the previous data
                 try:
@@ -334,16 +335,18 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                         break
                 if found:
                     continue
-
+                
+                """
                 # Otherwise we create the file
                 filetemp=open(filenametemp,'w')
                 filetemp.close()       
+                """
 
                 # Running the simulation
-                print("simulating for %s"%pop)
+                # print("simulating for %s"%pop)
                 [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf)
                 
-                print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
+                # print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
                 # printing the results to a file
                 FILEHIST=checkfile(filename+'_hist.txt')
                 text=pop
@@ -352,12 +355,13 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 text+='\n'
                 FILEHIST.write(text)
                 FILEHIST.close()
+                """
                 # After the simulation is performed, we remove the temporary file
                 try:
                     os.remove(filenametemp)
                 except:
                     print("Warning! The temp file does not exist")
-                    
+                """ 
                     # checking the results
             results=readResults(population,filename, nu, factor, args[0])
             if results == 0:
@@ -371,6 +375,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 # Getting the information from the chromosome
                 LineTimes,EWfraction = GAgetPers(pop)
 
+                """
                 # creating the temporary file
                 filenametemp=filename
                 for LT in LineTimes:
@@ -381,7 +386,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 if os.path.isfile(filenametemp):
                     print("calculation is being carried out in another node for %s"%pop)
                     continue  # if it exists, the calculation is being performed in another node
-
+                """
                 # if it is not in execution, we look for previous data
                 # importing the previous data
                 try:
@@ -399,14 +404,15 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 if found:
                     continue
                 
+                """
                 # Otherwise we create the file
                 filetemp=open(filenametemp,'w')
                 filetemp.close()      
-
+                """
                 # Running the simulation
-                print("simulating for %s"%pop)
+                #print("simulating for %s"%pop)
                 [flow,flowSD, sppass, sppassSD,speed,speedSD,stocc,stoccSD,cost,costSD]=getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf)
-                print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
+                #print([pop,cost+6*factor*nu/10.8/sppass,np.sqrt((costSD)**2+(6*factor*nu*sppassSD/10.8/sppass**2)**2)])
                 # printing the results to a file
                 FILEHIST=checkfile(filename+'_hist.txt')
                 text=pop
@@ -415,12 +421,13 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                 text+='\n'
                 FILEHIST.write(text)
                 FILEHIST.close()
+                """
                 # After the simulation is performed, we remove the temporary file
                 try:
                     os.remove(filenametemp)
                 except:
                     print("Warning, the temp file does not exist")
-
+                """
             # checking the results
             results=readResults(population,filename, nu, factor)
             if results == 0:
