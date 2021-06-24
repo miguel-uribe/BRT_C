@@ -112,22 +112,22 @@ if __name__ == '__main__':
 
     # creating the root filename
     fileroot=createfilename(sys.argv)
+    if os.path.exists(fileroot+'_finished.tmp'): # if the simulation has already been performed, we do nothing
+        pass
+    else:
+        # removing all temporary files first
+        for File in os.listdir(basedata):
+            if File.endswith(".tmp"):
+                os.remove(basedata+File)
 
-    
-    
-    # removing all temporary files first
-    for File in os.listdir(basedata):
-        if File.endswith(".tmp"):
-            os.remove(basedata+File)
+        #starting the optimization 
+        if len(sys.argv) == 12:
+            [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot)
+        
+        elif len(sys.argv) == 13:
+            [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, firstchromo)
 
-    #starting the optimization 
-    if len(sys.argv) == 12:
-        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot)
-    
-    elif len(sys.argv) == 13:
-        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, firstchromo)
-
-    #When the script finishes we create a finished file
-    finished = open(fileroot+'_finished.tmp', 'w')
-    finished.close()
+        #When the script finishes we create a finished file
+        finished = open(fileroot+'_finished.tmp', 'w')
+        finished.close()
 
