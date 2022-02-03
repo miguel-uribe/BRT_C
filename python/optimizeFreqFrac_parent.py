@@ -125,7 +125,7 @@ if __name__ == '__main__':
         # The initial step is two minutos for all the lines starting in one, but the last one is 1e6
         infoarr = np.array([np.append(np.arange(1,15,2),1e6) for i in range(9)])
         # The initial fraction has a step of 0.1
-        infoarr = np.vstack((infoarr,np.arange(0.1,0.8,0.1)))
+        infoarr = np.vstack((infoarr,np.arange(0.1,0.9,0.1)))
         
 
         #starting the optimization 
