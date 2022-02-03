@@ -177,6 +177,7 @@ def GAinitialize(npopu, *args):
     while len(population)<npopu:
         indexes=np.random.randint(0,2**powers)
         print(indexes)
+        
         guess=GAgetChromo(indexes)
         # if the guess is already in the population
         equal=True

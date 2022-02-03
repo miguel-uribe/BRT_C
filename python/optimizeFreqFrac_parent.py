@@ -126,7 +126,8 @@ if __name__ == '__main__':
         infoarr = np.array([np.append(np.arange(1,15,2),1e6) for i in range(9)])
         # The initial fraction has a step of 0.1
         infoarr = np.vstack((infoarr,np.arange(0.1,0.9,0.1)))
-        
+        print("This is the information array:")
+        print(infoarr)
 
         #starting the optimization 
         if len(sys.argv) == 12:
