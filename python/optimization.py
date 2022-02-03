@@ -105,91 +105,79 @@ def GAinttobin(n,nbits):
     return s
 
 # given a set of periodicities, build the chromosome
-def GAgetChromo(pers, frac):
+def GAgetChromo(indexes):
+
+    if len(indexes) != 10:
+        print("Warning!!! The length of indexes in GAgetChromo is not 10")
+        return
+
     chrom=''
-    for per in pers[:-2]: # only applies for R1 to R8
-        p=int((per-80)/40)
-        if p<0:
-            print("Warning, period below 60s found in GAgetChromo")
-        elif p>14: # The service is disabled
-            p=15
-            chrom=chrom+GAinttobin(p,4)
+    for p in indexes[:-1]: # only applies for R1 to R8
+        if (p<0) or (p>7):
+            print("Warning!!! The indexes in GAgetChromo are not in the range between 0 and 7")
+            return
         else:
-            chrom=chrom+GAinttobin(p,4)
-    
-    if (pers[-2]<800) and (pers[-1]<800):
-        print("Warning! Periods for R9 and R10 are both lower than 800. Setting R10=1e6")
-    
-    #print(pers[-2])
-    if pers[-2]<800: # if R9 is the one working
-        p=int((pers[-2]-100)/100)
-        chrom=chrom+'0'+GAinttobin(p,3)
-    elif pers[-1]<800: # R10 is the one working
-        p=int((pers[-1]-100)/100)
-        chrom=chrom+'1'+GAinttobin(p,3)
-    else: # none is working
-        p=7
-        dice=np.random.random()
-        if dice<0.5:
-            chrom=chrom+'0'+GAinttobin(p,3)
-        else:
-            chrom=chrom+'1'+GAinttobin(p,3)
+            chrom=chrom+GAinttobin(p,3)
+        
+    if (indexes[-2]<0) or (indexes[-2]>15):
+        print("Warning! The index -2 is GAgetChromo is not in the range between 0 and 15")
+        return
+    else:
+        chrom=chrom+GAinttobin(p,4)
 
 
-    if frac<0.1 or frac>0.8:
-        print("Warning, frac is smaller th an 0.1 or larger than 0.8 in GAgetChromo")
-    chrom = chrom +GAinttobin(int(10*(frac-0.1)),3)
+
+    if indexes[-1]<0 or indexes[-1]>7:
+        print("Warning, last index is smaller than 0 or larger than 7 in GAgetChromo")
+        return
+    chrom = chrom +GAinttobin(indexes[-1],3)
     return chrom
 
 
+
 # given a chromosome,  get the periodicity  list
-def GAgetPers(chrom):
-    if len(chrom)!=39:
-        print("Error!!! The length of the chromosome is not 39 in GAgetPers")
+def GAgetPers(chrom, infoarr):
+    if len(chrom)!=31:
+        print("Error!!! The length of the chromosome is not 31 in GAgetPers")
         return None
     else:
         pers=[]
         while(len(pers)<8): # only for R1 to R8
-            pbin=chrom[:4]
-            p=int(pbin,2)*40+80
-            if p>=680: # The service is disabled
-                p=1e6
+            pbin=chrom[:3]
+            p=infoarr[len(pers),int(pbin,2)]
             pers.append(p)
-            chrom=chrom[4:]
+            chrom=chrom[3:]
         # Now setting the periods for services R9 and R10
-        pbin=chrom[0] # checking which service is the on working
-        pbin2=chrom[1:4]
-        p=int(pbin2,2)*100+100
-        if p>600:
-            p=1e6
-        if pbin=='0': # service R9 is the one working
-            pers.append(p)
+        pbin=chrom[:4] # checking which service is the on working
+        p=int(pbin,2)
+
+        if p<8: # service R9 is the one working
+            tim = infoarr[len(pers), p]
+            pers.append(tim)
             pers.append(1e6)
-        else: # service R10 is the one working
+        else:  # service R10 is the one working
+            tim = infoarr[len(pers), p-8]
             pers.append(1e6)
-            pers.append(p)
+            pers.append(tim)
         chrom = chrom[4:]
         # Setting the factor
         pbin=chrom[:3]
-        frac=int(pbin,2)*0.1+0.1
+        frac=infoarr[-1,int(pbin,2)]
         return pers, frac
 
 # initialize a number Npopu of random points in the phase space
 def GAinitialize(npopu, *args):
     # we generate npopu different initial guesses
     population=[]
+    # powers
+    powers = np.array([3,3,3,3,3,3,3,3,4,3])  # the number of bits to represent each index
     if len(args)>0:
         # addin
         population.append(args[0])
     while len(population)<npopu:
-        pers=80+40*np.random.randint(0,2**4,size=8)
-        dice=np.random.randint(0,2)
-        if dice==0: # R9 is the one working
-            pers=np.append(pers,np.array([100+100*np.random.randint(0,2**3),1e6]))
-        else:       # R10 is the one working
-            pers=np.append(pers,np.array([1e6,100+100*np.random.randint(0,2**3)]))
-        print(pers)
-        guess=GAgetChromo(pers,np.random.randint(0,2**3)*0.1+0.1)
+        indexes=np.random.randint(0,2**powers)
+        print(indexes)
+        guess=GAgetChromo(indexes)
         # if the guess is already in the population
         equal=True
         while equal:
@@ -296,7 +284,7 @@ def GAnewgen(population,popfitness,mprob):
 
 
 # This function gets the fitness of a population and sorts it
-def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, *args):
+def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, infoarr, *args):
     print("In GAgetfitness")   
     results=0
     while results==0:
@@ -305,7 +293,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
             # Now we scan over the remaining part of the population in series
             for pop in population[1:]:
                 # Getting the information from the chromosome
-                LineTimes,EWfraction = GAgetPers(pop)
+                LineTimes,EWfraction = GAgetPers(pop, infoarr)
                 
                 """
                 # creating the temporary file
@@ -373,7 +361,7 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
             for pop in population:
 
                 # Getting the information from the chromosome
-                LineTimes,EWfraction = GAgetPers(pop)
+                LineTimes,EWfraction = GAgetPers(pop,infoarr)
 
                 """
                 # creating the temporary file
@@ -521,10 +509,8 @@ def readResults(population, filename, nu, factor, *args):
             return 0 # there are still some missing items
 
 
-    
-
 # Running the optimization
-def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol,filename,*args):
+def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol,filename,infoarr,*args):
     # Number of evaluations
     Neval=0
     # We start by checking whether there is a population file
@@ -550,7 +536,7 @@ def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol
     # Printing the population
     print(population)    
     # We calculate the fitness and sort the population
-    [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename) # this might have to be changed
+    [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, infoarr) # this might have to be changed
     Neval=Neval+npopu-npopu%2 # The number of evaluation is updated
     # We establish the best one
     bestp=population[0]
@@ -589,11 +575,11 @@ def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol
             # The bests correspond to the first element after GANewgen
             bests=[bestTC,bestTCSD]
             print("Launching GAgetfitness with elitism")
-            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, bests)
+            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, infoarr, bests)
         # If there is not elitism
         else:
             print("Launching GA getfitness without elitism")
-            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename)
+            [population,totcosts,totcostSDs]=GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, fleet, filename, infoarr)
         Neval=Neval+npopu-npopu%2 # The number of evaluation is updated
         # We check whether there has been an improvement
         if totcosts[0]<bestTC:
@@ -608,11 +594,11 @@ def GAoptimize(INfile,TRfile,Routefile,s, conf, factor,nu,fleet,npopu,mprob,ntol
         print("The population")
         print(population)
         print("The best specimen so far...")
-        print(GAgetPers(bestp))
+        print(GAgetPers(bestp,infoarr))
         print("%f %f"%(bestTC,bestTCSD))
         FILE=checkfile(filename+'.txt')
         text="%d "%Neval
-        times, frac = GAgetPers(bestp)
+        times, frac = GAgetPers(bestp, infoarr)
         for time in times:
             text=text+"%d "%time
         text=text+"%f %f %f\n"%(frac, bestTC, bestTCSD)
