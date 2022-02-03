@@ -112,15 +112,15 @@ def GAgetChromo(indexes):
         return
 
     chrom=''
-    for p in indexes[:-1]: # only applies for R1 to R8
+    for p in indexes[:-2]: # only applies for R1 to R8
         if (p<0) or (p>7):
-            print("Warning!!! The indexes in GAgetChromo are not in the range between 0 and 7")
+            print("Warning!!! The indexes in GAgetChromo are not in the range between 0 and 7: %d"%p)
             return
         else:
             chrom=chrom+GAinttobin(p,3)
         
     if (indexes[-2]<0) or (indexes[-2]>15):
-        print("Warning! The index -2 is GAgetChromo is not in the range between 0 and 15")
+        print("Warning! The index -2 is GAgetChromo is not in the range between 0 and 15: %d"%indexes[2])
         return
     else:
         chrom=chrom+GAinttobin(p,4)
@@ -128,7 +128,7 @@ def GAgetChromo(indexes):
 
 
     if indexes[-1]<0 or indexes[-1]>7:
-        print("Warning, last index is smaller than 0 or larger than 7 in GAgetChromo")
+        print("Warning, last index is smaller than 0 or larger than 7 in GAgetChromo: %d"%indexes[-1])
         return
     chrom = chrom +GAinttobin(indexes[-1],3)
     return chrom
@@ -186,7 +186,7 @@ def GAinitialize(npopu, *args):
                 equal=True
 
         population.append(guess)
-    
+    print(population)
     return population
 
 # mutating a member of population
