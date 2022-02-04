@@ -235,12 +235,12 @@ if __name__ == '__main__':
         finished = open(fileroot+'_finished.tmp', 'w')
         finished.close()
 
-        # we remove all the simulation files in cpp/sim_results
-        dirname = os.path.dirname(__file__)
-        dirname = os.path.join(dirname,'../cpp/sim_results_new/')
-        files = glob.glob(dirname + '/*.txt')
-        for f in files:
-            try:
-                os.remove(f)
-            except OSError as e:
-                print("Error: %s : %s" % (f, e.strerror))
+    # we remove all the simulation files in cpp/sim_results
+    dirname = os.path.dirname(__file__)
+    dirname = os.path.join(dirname,'../cpp/sim_results_new/')
+    files = glob.glob(dirname + '/*.txt')
+    for f in files:
+        try:
+            os.remove(f)
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
