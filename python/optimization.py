@@ -10,7 +10,6 @@ import time
 # One multiple simulations to get the average bus flow
 def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf):
     
-
     # defining the files
     IN = INfile
     TR = TRfile
@@ -28,7 +27,7 @@ def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Route
         filename = filename +'_'+str(S)
     for LT in LineTimes:
         filename = filename +'_'+str(int(LT))
-    filename= filename +'_'+ str(factor)+'_'+str(fleet)+'_'+str(int(100*EWfraction))+'.txt'
+    filename= filename +'_'+ str(factor)+'_'+str(fleet)+'_'+str(round(100*EWfraction))+'.txt'
     file = os.path.join(dirname,'../cpp/sim_results_new/'+filename)
 
     try:
@@ -106,7 +105,6 @@ def GAinttobin(n,nbits):
 
 # given a set of periodicities, build the chromosome
 def GAgetChromo(indexes):
-
     if len(indexes) != 10:
         print("Warning!!! The length of indexes in GAgetChromo is not 10")
         return
@@ -120,7 +118,7 @@ def GAgetChromo(indexes):
             chrom=chrom+GAinttobin(p,3)
         
     if (indexes[-2]<0) or (indexes[-2]>15):
-        print("Warning! The index -2 is GAgetChromo is not in the range between 0 and 15: %d"%indexes[2])
+        print("Warning! The index -2 is GAgetChromo is not in the range between 0 and 15: %d"%indexes[-2])
         return
     else:
         chrom=chrom+GAinttobin(p,4)
@@ -177,7 +175,6 @@ def GAinitialize(npopu, *args):
     while len(population)<npopu:
         indexes=np.random.randint(0,2**powers)
         print(indexes)
-        
         guess=GAgetChromo(indexes)
         # if the guess is already in the population
         equal=True

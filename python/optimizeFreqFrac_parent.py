@@ -5,6 +5,9 @@ Created on Sat Nov 04 09:25:32 2017
 @author: miguel
 """
 
+from distutils.log import info
+from hashlib import new
+from pickletools import optimize
 import createFiles
 import subprocess
 import optimization
@@ -35,7 +38,75 @@ def checkfile(filename):
         f=open(filename,'w')
     return f
 
+
+# renaming all the simulation files
+def backupfiles(fileroot, suffix):
+    try:
+        os.rename(fileroot+'_hist.txt', fileroot+'_hist_'+suffix+'.txt')
+        os.rename(fileroot+'_popu_hist.txt', fileroot+'_popu_hist_'+suffix+'.txt')
+        os.rename(fileroot+'.txt', fileroot+'_'+suffix+'.txt')
+    except:
+        pass
+
+# creating a new array of data from the new optimal value
+def updateArray(number, oldarray, dt, minimal):
+    if number < 1e6: # if the result is not infinite
+        initial = np.max([minimal,number-3*dt]) # we choose the minimal value
+        array = np.append(np.arange(initial,initial + 6.5*dt,dt),1e6)
+    else:
+        dt = oldarray[1]-oldarray[0] # the step does not change
+        initial = oldarray[-2]+dt
+        array = np.append(np.arange(initial,initial + 6.5*dt,dt),1e6)
+    return array
+
+   
+# updating the infoarray
+
+def updateinfoArray(besttimes, oldinfoarray, minimaltime, dtime, minimalfrac, dfrac):
+     # first the standard lines
+    for i in range(len(oldinfoarray[:-2])):
+        try:
+            newinfoarr = np.vstack((newinfoarr, updateArray(besttimes[i],oldinfoarray[i],dtime,minimaltime)))  # the step is now one minute
+        except:
+            newinfoarr = updateArray(besttimes[i],oldinfoarray[i],dtime,minimaltime)
+
+    # now the recovering services
+    value = np.min([besttimes[8],besttimes[9]])
+    newinfoarr = np.vstack((newinfoarr,updateArray(value,oldinfoarray[-2],dtime,minimaltime)))
+
+    # now the fraction
+    newinfoarr = np.vstack((newinfoarr, oldinfoarray[-1]))  # the step is now 0.05
+    print("Updating the infoarray")
+    print(newinfoarr)
+    return newinfoarr
+
+# update the chromosome
+def updateseedchromo(besttimes,bestfraction,newinfoarr):
+    print("Updating the indexes")
+    print("bestimes", besttimes)
+    print("bestfraction", bestfraction)
+    indexes = []
+    for i in range(len(newinfoarr[:-2])):
+        indexes.append(np.where(newinfoarr[i]==besttimes[i])[0][0])
     
+    # we now find which service R9 or R10 is working:
+    working = np.min([besttimes[8],besttimes[9]])
+    if working == 0: # service 9 is the one working
+        index = np.where(newinfoarr[-2]==besttimes[-2])[0][0]
+        indexes.append(index)
+    else:   # service R9 is the one working
+        index = np.where(newinfoarr[-2]==besttimes[-1])[0][0]
+        indexes.append(index+8)
+    
+    # finally, we set the frac index
+    indexes.append(np.where(np.abs(newinfoarr[-1]-bestfraction)<1e-4)[0][0])
+
+    # we create the new chromosome
+    print(indexes)
+    newchromo = optimization.GAgetChromo(indexes) 
+
+    return newchromo
+
 
 if __name__ == '__main__':  
     
@@ -123,7 +194,7 @@ if __name__ == '__main__':
 
         # creating the initial array of Times
         # The initial step is two minutos for all the lines starting in one, but the last one is 1e6
-        infoarr = np.array([np.append(np.arange(1,15,2),1e6) for i in range(9)])
+        infoarr = np.array([np.append(np.arange(60,15*60,120),1e6) for i in range(9)])
         # The initial fraction has a step of 0.1
         infoarr = np.vstack((infoarr,np.arange(0.1,0.9,0.1)))
         print("This is the information array:")
@@ -136,8 +207,29 @@ if __name__ == '__main__':
         elif len(sys.argv) == 13:
             [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, infoarr, firstchromo)
 
-        
+        # After the first optimization has been performed we retrieve the results
+        besttimes, bestfraction = optimization.GAgetPers(bestp,infoarr)
+        # We move the optimization files
+        backupfiles(fileroot, '1st')
+        # we now create an updated inforarr
+        newinfoarr = updateinfoArray(besttimes,infoarr,30,60,0.05,0.05) # time step 60, fraction step, 0.05
+        # we create the new chromosome
+        newchromo = updateseedchromo(besttimes,bestfraction,newinfoarr)
+        # we run the simulation again
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
+
+        # After the first optimization has been performed we retrieve the results
+        besttimes, bestfraction = optimization.GAgetPers(bestp,infoarr)
+        # We move the optimization files
+        backupfiles(fileroot, '2nd')
+        # we now create an updated inforarr
+        newinfoarr = updateinfoArray(besttimes,infoarr,30,30,0.025,0.025) # time step 60, fraction step, 0.05
+        # we create the new chromosome
+        newchromo = updateseedchromo(besttimes,bestfraction,newinfoarr)
+        # we run the simulation again
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
+
+
         #When the script finishes we create a finished file
         finished = open(fileroot+'_finished.tmp', 'w')
         finished.close()
-
