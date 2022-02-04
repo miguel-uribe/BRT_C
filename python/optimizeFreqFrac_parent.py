@@ -16,6 +16,7 @@ import sys
 import os.path
 import os
 import filecmp
+import glob
 
 # This script should be called as optimizeFreqFrac_parent.py factor fleet nu s0 s1 s2 s3 npopu mprob ntol seed firstchromo
 
@@ -233,3 +234,13 @@ if __name__ == '__main__':
         #When the script finishes we create a finished file
         finished = open(fileroot+'_finished.tmp', 'w')
         finished.close()
+
+        # we remove all the simulation files in cpp/sim_results
+        dirname = os.path.dirname(__file__)
+        dirname = os.path.join(dirname,'../cpp/sim_results_new/')
+        files = glob.glob(dirname + '/*.txt')
+        for f in files:
+            try:
+                os.remove(f)
+            except OSError as e:
+                print("Error: %s : %s" % (f, e.strerror))
