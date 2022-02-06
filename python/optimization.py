@@ -340,7 +340,11 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                     text+=' %f'%value
                 text+='\n'
                 FILEHIST.write(text)
-                FILEHIST.close()
+                try:
+                    FILEHIST.close()
+                except:
+                    time.sleep(0.1)
+                    FILEHIST.close()
                 """
                 # After the simulation is performed, we remove the temporary file
                 try:
@@ -406,7 +410,11 @@ def GAgetfitness(population, s, conf, INfile,TRfile, Routefile, factor, nu, flee
                     text+=' %f'%value
                 text+='\n'
                 FILEHIST.write(text)
-                FILEHIST.close()
+                try:
+                    FILEHIST.close()
+                except:
+                    time.sleep(0.1)
+                    FILEHIST.close()
                 """
                 # After the simulation is performed, we remove the temporary file
                 try:

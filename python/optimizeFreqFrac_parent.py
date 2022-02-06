@@ -58,6 +58,11 @@ def updateArray(number, oldarray, dt, minimal):
         dt = oldarray[1]-oldarray[0] # the step does not change
         initial = oldarray[-2]+dt
         array = np.append(np.arange(initial,initial + 6.5*dt,dt),1e6)
+    # checking whether the number is in the new array
+    while(True):
+        if number in array:
+            break
+        array = array+minimal # If the number is not in the array, we add the value of the smallest number
     return array
 
    
@@ -72,11 +77,10 @@ def updateinfoArray(besttimes, oldinfoarray, minimaltime, dtime, minimalfrac, df
             newinfoarr = updateArray(besttimes[i],oldinfoarray[i],dtime,minimaltime)
 
     # now the recovering services
-    value = np.min([besttimes[8],besttimes[9]])
-    newinfoarr = np.vstack((newinfoarr,updateArray(value,oldinfoarray[-2],dtime,minimaltime)))
+    newinfoarr = np.vstack((newinfoarr, oldinfoarray[-2]))  # this one does not change
 
     # now the fraction
-    newinfoarr = np.vstack((newinfoarr, oldinfoarray[-1]))  # the step is now 0.05
+    newinfoarr = np.vstack((newinfoarr, oldinfoarray[-1]))  # this one does not change
     print("Updating the infoarray")
     print(newinfoarr)
     return newinfoarr
