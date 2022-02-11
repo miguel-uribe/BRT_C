@@ -188,9 +188,60 @@ if __name__ == '__main__':
 
     # creating the root filename
     fileroot=createfilename(sys.argv)
+
+    
     if os.path.exists(fileroot+'_finished.tmp'): # if the simulation has already been performed, we do nothing
         pass
-    else:
+    elif os.path.exists(fileroot+'_finished_2nd.tmp'): # if the 2nd simulation has already been performed only the 3rd simulation should be run
+        
+        # start the simulation with the parameters of the 3rd simulation
+        newinfoarr = np.loadtxt(fileroot+'_finished_2nd.tmp')
+        newchromo = str(np.loadtxt(fileroot+'_finished_2nd_chromo.tmp', dtype = str))
+        print("The 2nd simulation is already finished")
+        print("Starting the 3rd simulation with parameters")
+        print(newinfoarr)
+        print(newchromo)
+        # we run the simulation again
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
+
+        #When the script finishes we create a finished file
+        finished = open(fileroot+'_finished.tmp', 'w')
+        finished.close()
+
+    elif os.path.exists(fileroot+'_finished_1st.tmp'): # if the 1st simulation has already been performed, we run the second optimization
+    
+        # start the simulation with the parameters of the 1st simulation
+        newinfoarr = np.loadtxt(fileroot+'_finished_1st.tmp')
+        newchromo = str(np.loadtxt(fileroot+'_finished_1st_chromo.tmp', dtype = str))
+        print("The 1st simulation is already finished")
+        print("Starting the 2nd simulation with parameters")
+        print(newinfoarr)
+        print(newchromo)
+        # we run the simulation again
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
+        # After the first optimization has been performed we retrieve the results
+        besttimes, bestfraction = optimization.GAgetPers(bestp,newinfoarr)
+        # We move the optimization files
+        backupfiles(fileroot, '2nd')
+        # we now create an updated inforarr
+        newinfoarr = updateinfoArray(besttimes,newinfoarr,30,30,0.025,0.025) # time step 60, fraction step, 0.05
+        # we create the new chromosome
+        newchromo = updateseedchromo(besttimes,bestfraction,newinfoarr)
+        #When the script finishes we create a finished file
+        np.savetxt(fileroot+'_finished_2nd.tmp', newinfoarr)
+        np.savetxt(fileroot+'_finished_2nd_chromo.tmp', [newchromo], fmt = '%s')
+
+
+        # we run the simulation again
+        [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
+
+        #When the script finishes we create a finished file
+        finished = open(fileroot+'_finished.tmp', 'w')
+        finished.close()
+
+        
+    else: # we need to start from the scratch
+
         # removing all temporary files first
         for File in os.listdir(basedata):
             if File.endswith(".tmp"):
@@ -220,20 +271,29 @@ if __name__ == '__main__':
         newinfoarr = updateinfoArray(besttimes,infoarr,30,60,0.05,0.05) # time step 60, fraction step, 0.05
         # we create the new chromosome
         newchromo = updateseedchromo(besttimes,bestfraction,newinfoarr)
+
+        #When the script finishes we create a finished file
+        np.savetxt(fileroot+'_finished_1st.tmp', newinfoarr)
+        np.savetxt(fileroot+'_finished_1st_chromo.tmp', [newchromo], fmt = '%s')
+
+
         # we run the simulation again
         [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
-
         # After the first optimization has been performed we retrieve the results
-        besttimes, bestfraction = optimization.GAgetPers(bestp,infoarr)
+        besttimes, bestfraction = optimization.GAgetPers(bestp,newinfoarr)
         # We move the optimization files
         backupfiles(fileroot, '2nd')
         # we now create an updated inforarr
-        newinfoarr = updateinfoArray(besttimes,infoarr,30,30,0.025,0.025) # time step 60, fraction step, 0.05
+        newinfoarr = updateinfoArray(besttimes,newinfoarr,30,30,0.025,0.025) # time step 60, fraction step, 0.05
         # we create the new chromosome
         newchromo = updateseedchromo(besttimes,bestfraction,newinfoarr)
+        #When the script finishes we create a finished file
+        np.savetxt(fileroot+'_finished_2nd.tmp', newinfoarr)
+        np.savetxt(fileroot+'_finished_2nd_chromo.tmp', [newchromo], fmt = '%s')
+
+
         # we run the simulation again
         [Neval,bestTC,bestTCSD,bestp]=optimization.GAoptimize(INfile,TRfile, RMfile,s,conf,factor,nu,fleet,npopu,mprob,ntol,fileroot, newinfoarr, newchromo)
-
 
         #When the script finishes we create a finished file
         finished = open(fileroot+'_finished.tmp', 'w')
