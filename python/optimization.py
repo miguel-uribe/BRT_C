@@ -39,6 +39,7 @@ def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Route
         ratio = stds[2]/means[2]
         
     except:
+        sim = False  # whether the simulation data have been exported
         # running the pool of processes
         Ntimes=multiprocessing.cpu_count()
         counter = 0
@@ -52,7 +53,12 @@ def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Route
                 command = command + ['%d'%(i+counter)]
                 command = command + [str(x) for x in LineTimes]
                 command = command + [str(x) for x in s]
-                command = command + [str(EWfraction), IN, TR, Routes,conf, str(anim)]
+                command = command + [str(EWfraction), IN, TR, Routes,conf]
+                if (anim == 1) & (sim==False):
+                    sim = True
+                    command = command +[str(anim)]
+                else:
+                    command = command +['0']
                 #print(command)
                 #Creating one iteration process
                 procs.append(subprocess.Popen(command))
