@@ -27,8 +27,11 @@ int main (int argc, char **argv){
     // 22 TR file
     // 23 Routes file
     // 24 the configuration
+    // 25 whether the specific bus_data file should be created
 
 
+    ///////////////////////////////////////////
+    int animdata = stoi(argv[25]);
     ///////////////////////////////////////////
     // Reading the route matrix file
     Matrices RM;
@@ -130,6 +133,33 @@ int main (int argc, char **argv){
     int ncounts =0;
     vector<float> bussp;
 
+    ///////////////////////////////////////////////////////
+    //// defining the output files
+    
+    string filename = "../cpp/sim_results_new/sim_results_";
+    // adding the configuration
+    filename = filename + argv[24];
+    // adding the stop arrangement
+    for (int j =12; j<20; j++){
+        filename = filename + "_"+argv[j];
+    }
+    // adding the line times
+    for (auto LT: LineTimes){
+        filename= filename +"_"+to_string(LT);
+    }
+    // adding the factor
+    filename = filename +"_"+to_string(factor);
+    // adding the fleet
+    filename = filename +"_"+to_string(fleet);
+    // adding the EW fraction
+    if (animdata == 1){ // in case the animation is requested
+        filename_anim = filename+"_"+to_string(int(100*EWfract))+"_anim.txt";
+        ofstream animfile;
+        animfile.open(filename_anim);
+    }
+
+    filename = filename +"_"+to_string(int(100*EWfract))+".txt";
+
 
     /////////////////////////////////////////////////////////
     // performing the simulation
@@ -159,6 +189,17 @@ int main (int argc, char **argv){
 
         // calculating
         getPassengerFlowSpeedOccFast(BusesPar,flow,occ,Nactivepass,ncounts);
+
+        // exporting the data in case of the animation data was requested
+        if (animdata == 1){
+            for (int i =0; i<BUSESPAR[0].size(); i++){
+                animfile<<TIME<<" ";
+                for (int j = 0; j<Nparam; j++){
+                    animfile<<BUSESPAR[i][j]<<" ";
+                }
+            animfile<<endl;
+            }
+        }
     }
 
    // cout<<"Finished the simulation"<< endl;   
@@ -212,28 +253,15 @@ int main (int argc, char **argv){
 
     /////////////////////////////////////////////////////////
     // exporting the data
-    string filename = "../cpp/sim_results_new/sim_results_";
-    // adding the configuration
-    filename = filename + argv[24];
-    // adding the stop arrangement
-    for (int j =12; j<20; j++){
-        filename = filename + "_"+argv[j];
-    }
-    // adding the line times
-    for (auto LT: LineTimes){
-        filename= filename +"_"+to_string(LT);
-    }
-    // adding the factor
-    filename = filename +"_"+to_string(factor);
-    // adding the fleet
-    filename = filename +"_"+to_string(fleet);
-    // adding the EW fraction
-    filename = filename +"_"+to_string(int(100*EWfract))+".txt";
 
     // opening the file
     ofstream outfile;
     outfile.open(filename, fstream::app);
     outfile<<seed<<" "<<flow<<" "<<passsp<<" "<<BSP<<" "<<occ<<" "<<cost<<endl;
     outfile.close();
+
+    if (animdata == 1){ // closing the animation file in case it was requested
+        animfile.close()
+    }
    // cout<<"Exported the data"<<endl;
 }

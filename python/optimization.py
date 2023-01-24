@@ -8,7 +8,7 @@ import time
 
 
 # One multiple simulations to get the average bus flow
-def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf):
+def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Routefile,conf, anim):
     
 
     # defining the files
@@ -52,7 +52,7 @@ def getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,Route
                 command = command + ['%d'%(i+counter)]
                 command = command + [str(x) for x in LineTimes]
                 command = command + [str(x) for x in s]
-                command = command + [str(EWfraction), IN, TR, Routes,conf]
+                command = command + [str(EWfraction), IN, TR, Routes,conf, str(anim)]
                 #print(command)
                 #Creating one iteration process
                 procs.append(subprocess.Popen(command))
