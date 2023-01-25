@@ -82,5 +82,5 @@ if __name__ == '__main__':
     ################ PARALLEL SCRIPT
 
     # calling the script
-    anim = 0
+    anim = 1
     print(optimization.getPassengerFlowFast(LineTimes,s,factor,fleet,EWfraction,INfile,TRfile,RMfile, conf, anim))

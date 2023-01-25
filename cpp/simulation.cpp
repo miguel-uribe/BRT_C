@@ -152,9 +152,9 @@ int main (int argc, char **argv){
     // adding the fleet
     filename = filename +"_"+to_string(fleet);
     // adding the EW fraction
+    ofstream animfile;
     if (animdata == 1){ // in case the animation is requested
-        filename_anim = filename+"_"+to_string(int(100*EWfract))+"_anim.txt";
-        ofstream animfile;
+        string filename_anim = filename+"_"+to_string(int(100*EWfract))+"_anim.txt";
         animfile.open(filename_anim);
     }
 
@@ -192,10 +192,10 @@ int main (int argc, char **argv){
 
         // exporting the data in case of the animation data was requested
         if (animdata == 1){
-            for (int i =0; i<BUSESPAR[0].size(); i++){
+            for (int i =0; i<BusesPar[0].size(); i++){
                 animfile<<TIME<<" ";
                 for (int j = 0; j<Nparam; j++){
-                    animfile<<BUSESPAR[i][j]<<" ";
+                    animfile<<BusesPar[j][i]<<" ";
                 }
             animfile<<endl;
             }
@@ -261,7 +261,7 @@ int main (int argc, char **argv){
     outfile.close();
 
     if (animdata == 1){ // closing the animation file in case it was requested
-        animfile.close()
+        animfile.close();
     }
    // cout<<"Exported the data"<<endl;
 }
