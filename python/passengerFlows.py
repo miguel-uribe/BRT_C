@@ -21,19 +21,19 @@ if __name__ == '__main__':
     
     # The Line IDs, times and offsets
     LineIDs=[0,1,2,3,4,5,6,7,8,9]
-    LineTimes = [80,280,440,120,520,520,200,640,100,1000000.0]
+    LineTimes = [88,88,58,58,58,58,88,88,10000000.0,1000000.0]
 
     # The stop cinfiguration
-    s=[1,3,1,3,2,2,3,1]    
+    s=[1,3,2,2,2,2,3,1]    
 
     # passenger factor
-    factor = 40000
+    factor = 50000
 
     # fleet size
     fleet = 1000    
 
     # EWfraction
-    EWfraction = 0.1
+    EWfraction = 0.5
 
     # Nstations
     NStations = 46
